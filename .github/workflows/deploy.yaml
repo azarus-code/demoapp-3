@@ -1,0 +1,67 @@
+name: Build and Deploy to AKS
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  APP_NAME: demoapp-3
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the code
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Step 2: Log in to Docker Registry
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+         username: ${{secrets.DOCKER_USERNAME}}
+         password: ${{secrets.DOCKER_PASSWORD}}
+         registry: https://idpdeveacr.azurecr.io
+
+      # Step 3: Build the Docker Image
+      - name: Build Docker Image
+        run: |
+          docker build -t idpdeveacr.azurecr.io/demoapp-3:latest -f Dockerfile .
+
+      # Step 4: Push Docker Image to Registry
+      - name: Push Docker Image
+        run: |
+          docker push idpdeveacr.azurecr.io/demoapp-3:latest
+
+      # Step 5: Set up kubectl
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+      # - name: Set up kubeconfig
+      #   run: |
+      #     echo "${{secrets.KUBECONFIG_CONTENT}}" > kubeconfig
+      #     export KUBECONFIG=$PWD/kubeconfig
+
+       # Step 2: Log in to Azure
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{secrets.AZURE_CREDENTIALS}}
+
+      # Step 3: Set up AKS credentials
+      - name: Set up AKS
+        run: |
+          az aks get-credentials --resource-group ${{secrets.AKS_RESOURCE_GROUP}} --name bsidp-cluster
+          kubectl config view
+
+      - name: Deploy to Kubernetes
+        env:
+          IMAGE: idpdeveacr.azurecr.io/demoapp-3:latest
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+
+          # Verify deployment
+          kubectl rollout status deployment/demoapp-3

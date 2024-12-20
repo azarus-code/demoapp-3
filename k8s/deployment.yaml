@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demoapp-3
+  namespace: default
+  labels:
+    'backstage.io/kubernetes-id': 'demoapp-3'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demoapp-3
+  template:
+    metadata:
+      labels:
+        app: demoapp-3
+        'backstage.io/kubernetes-id': 'demoapp-3'
+    spec:
+      imagePullSecrets:
+      - name: registry-auth
+      containers:
+        - name: demoapp-3
+          image: idpdeveacr.azurecr.io/demoapp-3:latest
+          ports:
+            - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demoapp-3
+  namespace: default
+  labels:
+    #tekton.dev/pipelines: default/springboot-pipeline
+    'backstage.io/kubernetes-id': 'demoapp-3'
+spec:
+  type: LoadBalancer
+  selector:
+    app: demoapp-3
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
