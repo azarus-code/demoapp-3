@@ -22,7 +22,7 @@ spec:
         - name: demoapp-3
           image: idpdeveacr.azurecr.io/demoapp-3:latest
           ports:
-            - containerPort: 3000
+            - containerPort: 80
 ---
 apiVersion: v1
 kind: Service
@@ -39,4 +39,4 @@ spec:
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 3000
+      targetPort: 80
